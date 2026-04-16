@@ -32,12 +32,16 @@ enum Commands {
         message: String,
 
         /// Cron expression (e.g. "0 10 * * 1-5")
-        #[arg(short, long)]
-        cron: String,
+        #[arg(short, long, required_unless_present = "delay")]
+        cron: Option<String>,
 
-        /// Fire once then auto-remove
+        /// Fire once then auto-remove (implied by --in)
         #[arg(long, default_value_t = false)]
         once: bool,
+
+        /// Duration from now (e.g. "30m", "2h", "5d"). Implies --once.
+        #[arg(long = "in", id = "delay", required_unless_present = "cron")]
+        delay: Option<String>,
     },
 
     /// List active reminders
@@ -81,13 +85,28 @@ fn main() {
             message,
             cron,
             once,
-        } => match remind::add_reminder(&message, &cron, once) {
-            Ok(id) => println!("reminder set: {id}"),
-            Err(e) => {
-                eprintln!("error: {e}");
-                std::process::exit(1);
+            delay,
+        } => {
+            let (cron_expr, is_once) = if let Some(duration) = delay {
+                match remind::duration_to_cron(&duration) {
+                    Ok(expr) => (expr, true),
+                    Err(e) => {
+                        eprintln!("error: {e}");
+                        std::process::exit(1);
+                    }
+                }
+            } else {
+                (cron.unwrap(), once)
+            };
+
+            match remind::add_reminder(&message, &cron_expr, is_once) {
+                Ok(id) => println!("reminder set: {id}"),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    std::process::exit(1);
+                }
             }
-        },
+        }
 
         Commands::List => {
             let reminders = remind::list_reminders();

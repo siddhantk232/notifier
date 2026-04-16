@@ -10,4 +10,5 @@ path = "src/main.rs"
 [dependencies]
 clap = { version = "4", features = ["derive"] }
 mac-notification-sys = "0.6"
+time = { version = "0.3", features = ["local-offset"] }
 uuid = { version = "1", features = ["v4"] }

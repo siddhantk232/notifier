@@ -1,6 +1,7 @@
 use std::fs;
 use std::path::PathBuf;
 use std::process::Command;
+use time::OffsetDateTime;
 use uuid::Uuid;
 
 const PLIST_PREFIX: &str = "com.notifier.reminder";
@@ -312,4 +313,41 @@ pub fn remove_reminder(id: &str) -> Result<bool, String> {
 pub fn remove_once_reminder(id: &str) -> Result<(), String> {
     remove_reminder(id)?;
     Ok(())
+}
+
+/// Parse a human duration like "30m", "2h", "5d" and return a cron expression
+/// for that exact future time (pinned minute/hour/day/month).
+pub fn duration_to_cron(input: &str) -> Result<String, String> {
+    let input = input.trim();
+    if input.is_empty() {
+        return Err("empty duration".into());
+    }
+
+    let (num_str, unit) = input.split_at(input.len() - 1);
+    let n: i64 = num_str
+        .parse()
+        .map_err(|_| format!("invalid duration number: {num_str}"))?;
+
+    if n <= 0 {
+        return Err("duration must be positive".into());
+    }
+
+    let seconds: i64 = match unit {
+        "m" => n * 60,
+        "h" => n * 3600,
+        "d" => n * 86400,
+        "w" => n * 604800,
+        _ => return Err(format!("unknown duration unit '{unit}', use m/h/d/w")),
+    };
+
+    let now = OffsetDateTime::now_local()
+        .unwrap_or_else(|_| OffsetDateTime::now_utc());
+    let target = now + time::Duration::seconds(seconds);
+
+    let minute = target.minute();
+    let hour = target.hour();
+    let day = target.day();
+    let month = target.month() as u8;
+
+    Ok(format!("{minute} {hour} {day} {month} *"))
 }

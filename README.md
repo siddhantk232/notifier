@@ -34,6 +34,11 @@ notify remind "lunch break" --cron "0 12 * * *"
 
 # One-shot reminder (auto-removes after firing)
 notify remind "deploy to prod" --cron "30 14 16 4 *" --once
+
+# Relative one-shot: fire once N minutes/hours/days/weeks from now
+notify remind "check deployment" --in 30m
+notify remind "renew subscription" --in 5d
+notify remind "review PR" --in 2h
 ```
 
 ### List and remove reminders
