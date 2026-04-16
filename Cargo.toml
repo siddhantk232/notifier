@@ -1,0 +1,13 @@
+[package]
+name = "notify"
+version = "0.1.0"
+edition = "2024"
+
+[[bin]]
+name = "notify"
+path = "src/main.rs"
+
+[dependencies]
+clap = { version = "4", features = ["derive"] }
+mac-notification-sys = "0.6"
+uuid = { version = "1", features = ["v4"] }
